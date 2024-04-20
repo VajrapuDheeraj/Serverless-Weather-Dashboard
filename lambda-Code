@@ -1,0 +1,44 @@
+import json
+import urllib.parse
+import urllib.request
+
+def lambda_handler(event: dict, context) -> dict:
+    # Extract location input from API Gateway event
+    location = event['queryStringParameters']['location']
+    encoded_location = urllib.parse.quote(location)
+
+    # Fetch weather data from OpenWeatherMap API
+    api_key = 'replace with your own openweather api key'
+    url = f'http://api.openweathermap.org/data/2.5/weather?q={encoded_location}&appid={api_key}&units=metric'
+    
+    try:
+        with urllib.request.urlopen(url) as response:
+            weather_data = json.load(response)
+            # Extract relevant weather information from response
+            weather_description = weather_data['weather'][0]['description']
+            temperature = weather_data['main']['temp']
+            humidity = weather_data['main']['humidity']
+            # Construct response
+            response_body = {
+                'location': location,
+                'weather': weather_description,
+                'temperature': temperature,
+                'humidity': humidity
+            }
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'  # Enable CORS for cross-origin requests
+                },
+                'body': json.dumps(response_body)
+            }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'text/plain',
+                'Access-Control-Allow-Origin': '*'  # Enable CORS for cross-origin requests
+            },
+            'body': str(e)
+        }
